@@ -9,7 +9,7 @@ docling:
   preserve_layout: true
   cache_converted: true
 chunking:
-  strategy: "docling_official"  # docling_official|docling|hierarchical|token
+  strategy: "docling"  # docling|hierarchical|token
   max_tokens: 800
   overlap_tokens: 150
   by_headings: true
