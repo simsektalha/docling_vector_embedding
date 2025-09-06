@@ -8,8 +8,7 @@ from src.ingest.convert_docling import convert_with_docling
 from src.ingest.discover import discover_files
 from src.ingest.chunk import chunk_document
 from src.ingest.embed import Embedder
-from src.ingest.upsert import build_records
-from src.search.client_qdrant import QdrantVectorClient
+from src.ingest.upsert import build_records, make_vector_client
 
 
 def main() -> None:
@@ -36,9 +35,8 @@ def main() -> None:
         timeout_s=cfg["embeddings"].get("request_timeout_s", 60),
     )
     dims = embedder.embedding_dimensions()
-    vcfg = cfg["vectordb"]
-    client = QdrantVectorClient(vcfg.get("url"), vcfg.get("host"), vcfg.get("port"), vcfg.get("api_key"), vcfg["collection"], dims)
-    client.ensure_collection(vcfg["collection"], dims)
+    client = make_vector_client(cfg)
+    client.ensure_collection(cfg["vectordb"]["collection"], dims)
 
     total_chunks = 0
     for f in files:

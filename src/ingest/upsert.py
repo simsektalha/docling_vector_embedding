@@ -42,3 +42,21 @@ class VectorClient:
         raise NotImplementedError
 
 
+def make_vector_client(cfg: Dict) -> VectorClient:
+    provider = cfg["vectordb"]["provider"]
+    dims = cfg["vectordb"].get("dims", "auto")
+    if provider == "qdrant":
+        from src.search.client_qdrant import QdrantVectorClient
+
+        # Caller should set dims from embedder when creating collection
+        vcfg = cfg["vectordb"]
+        return QdrantVectorClient(vcfg.get("url"), vcfg.get("host"), vcfg.get("port"), vcfg.get("api_key"), vcfg["collection"], int(dims) if dims != "auto" else 0)
+    if provider == "pgvector":
+        from src.search.client_pgvector import PgVectorClient
+
+        vcfg = cfg["vectordb"]
+        dsn = vcfg.get("dsn") or "postgresql://postgres:postgres@localhost:5432/postgres"
+        return PgVectorClient(dsn=dsn, collection=vcfg["collection"], dims=int(dims) if dims != "auto" else 0)
+    raise ValueError(f"Unknown vectordb provider: {provider}")
+
+
