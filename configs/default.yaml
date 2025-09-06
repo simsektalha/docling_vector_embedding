@@ -19,16 +19,15 @@ embeddings:
   batch_size: 64
   request_timeout_s: 60
 vectordb:
-  provider: "qdrant"     # qdrant|pinecone|weaviate|milvus
+  provider: "pgvector"    # pgvector|qdrant|pinecone|weaviate|milvus
   collection: "documents"
   dims: "auto"
+  dsn: "postgresql://postgres:postgres@localhost:5432/postgres"
+  # qdrant compatibility keys kept for easy switching
   url: "http://localhost:6333"
   host: "localhost"
   port: 6333
   api_key: null
-  prefer_hnsw_m: 16
-  prefer_ef_construct: 128
-  prefer_hnsw_ef: 64
 search:
   top_k: 5
   filters: {}
