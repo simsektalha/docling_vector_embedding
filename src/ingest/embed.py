@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import List
 
-from tenacity import retry, stop_after_attempt, wait_exponential_jitter
+from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 
 class Embedder:
@@ -44,7 +44,7 @@ class Embedder:
     def _embed_batch_hf(self, texts: List[str]) -> List[List[float]]:
         return self._model.encode(texts, convert_to_numpy=False)  # type: ignore
 
-    @retry(wait=wait_exponential_jitter(initial=1, max=20), stop=stop_after_attempt(5))
+    @retry(wait=wait_random_exponential(multiplier=1, max=20), stop=stop_after_attempt(5))
     def embed_texts(self, texts: List[str]) -> List[List[float]]:
         vectors: List[List[float]] = []
         for i in range(0, len(texts), self.batch_size):

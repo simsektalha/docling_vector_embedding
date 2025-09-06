@@ -20,7 +20,9 @@ class RagRequest(BaseModel):
     top_k: int = 5
 
 
-_cfg = load_config("configs/default.yaml")
+import os
+_cfg_path = os.getenv("CONFIG_PATH", "configs/default.yaml")
+_cfg = load_config(_cfg_path)
 _embedder = Embedder(
     provider=_cfg["embeddings"]["provider"],
     model=_cfg["embeddings"]["model"],

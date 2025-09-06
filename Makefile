@@ -1,7 +1,7 @@
 CONFIG?=configs/default.yaml
 QUERY?=What is configured by default?
 
-.PHONY: up down install ingest search rag api test samples
+.PHONY: up down install ingest search rag api test samples eval
 
 up:
 	docker compose up -d qdrant
@@ -29,5 +29,8 @@ samples:
 
 test:
 	pytest -q
+
+eval:
+	python -m src.eval --config $(CONFIG) --queries samples/queries.yaml --k 5
 
 
