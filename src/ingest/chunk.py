@@ -5,6 +5,49 @@ import tiktoken
 from src.common.types import Chunk, DocumentConversion
 
 
+def docling_markdown_chunk(conversion: DocumentConversion, max_tokens: int, overlap_tokens: int) -> List[Chunk]:
+    """Chunk using markdown headings from Docling export (if available).
+
+    Splits on markdown heading lines (e.g., lines starting with '#'). Then token-splits within each section.
+    """
+    encoder = tiktoken.get_encoding("cl100k_base")
+    text = conversion.markdown or "\n\n".join(s.text for s in conversion.sections)
+    lines = text.splitlines()
+    sections: List[str] = []
+    current: List[str] = []
+    for ln in lines:
+        if ln.strip().startswith("#") and current:
+            sections.append("\n".join(current).strip())
+            current = [ln]
+        else:
+            current.append(ln)
+    if current:
+        sections.append("\n".join(current).strip())
+
+    result: List[Chunk] = []
+    chunk_index = 0
+    for sec in sections:
+        pieces = _split_tokens(sec, max_tokens, overlap_tokens, encoder)
+        offset = 0
+        for piece in pieces:
+            start = offset
+            end = offset + len(piece)
+            result.append(
+                Chunk(
+                    doc_id=conversion.doc_id,
+                    chunk_index=chunk_index,
+                    text=piece,
+                    char_span=(start, end),
+                    section_path=None,
+                    page_numbers=[],
+                    metadata={},
+                )
+            )
+            chunk_index += 1
+            offset = end
+    return result
+
+
 def _split_tokens(text: str, max_tokens: int, overlap_tokens: int, encoder) -> List[str]:
     tokens = encoder.encode(text)
     chunks = []
@@ -71,6 +114,8 @@ def token_chunk(plain_text: str, doc_id: str, max_tokens: int, overlap_tokens: i
 def chunk_document(conversion: DocumentConversion, strategy: str, max_tokens: int, overlap_tokens: int) -> List[Chunk]:
     if strategy == "hierarchical" and conversion.sections:
         return hierarchical_chunk(conversion, max_tokens, overlap_tokens)
+    if strategy == "docling" and (conversion.markdown or conversion.sections):
+        return docling_markdown_chunk(conversion, max_tokens, overlap_tokens)
     joined = "\n\n".join(s.text for s in conversion.sections)
     return token_chunk(joined, conversion.doc_id, max_tokens, overlap_tokens)
 
