@@ -11,6 +11,7 @@ from src.ingest.upsert import VectorClient
 
 
 SCHEMA_SQL = """
+CREATE EXTENSION IF NOT EXISTS vector;
 CREATE TABLE IF NOT EXISTS documents (
     id TEXT PRIMARY KEY,
     text TEXT NOT NULL,
@@ -23,7 +24,7 @@ CREATE TABLE IF NOT EXISTS documents (
     doc_id TEXT,
     sha256 TEXT
 );
-CREATE INDEX IF NOT EXISTS documents_vec_idx ON documents USING ivfflat (vector vector_l2_ops) WITH (lists = 100);
+CREATE INDEX IF NOT EXISTS documents_vec_idx ON documents USING ivfflat (vector vector_cosine_ops) WITH (lists = 100);
 """
 
 
@@ -74,7 +75,7 @@ class PgVectorClient(VectorClient):
                 where.append(f"{k} = %s")
                 params.append(v)
         where_sql = (" WHERE " + " AND ".join(where)) if where else ""
-        sql = f"SELECT id, text, source_path, file_name, section_path, page_numbers, char_span, doc_id, sha256, (vector <-> %s) AS distance FROM documents{where_sql} ORDER BY vector <-> %s LIMIT {top_k}"
+        sql = f"SELECT id, text, source_path, file_name, section_path, page_numbers, char_span, doc_id, sha256, (1 - (vector <#> %s)) AS similarity FROM documents{where_sql} ORDER BY vector <#> %s ASC LIMIT {top_k}"
         # duplicate query_vector at end for ORDER BY
         params.append(query_vector)
         with self._conn.cursor() as cur:
@@ -82,11 +83,11 @@ class PgVectorClient(VectorClient):
             rows = cur.fetchall()
         out: List[SearchResult] = []
         for row in rows:
-            (rid, text, source_path, file_name, section_path, page_numbers, char_span, doc_id, sha256, distance) = row
+            (rid, text, source_path, file_name, section_path, page_numbers, char_span, doc_id, sha256, similarity) = row
             out.append(
                 SearchResult(
                     id=rid,
-                    score=float(1.0 / (1.0 + distance)) if distance is not None else 0.0,
+                    score=float(similarity) if similarity is not None else 0.0,
                     text=text,
                     metadata={
                         "source_path": source_path,
