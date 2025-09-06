@@ -2,7 +2,7 @@ from typing import Dict, List, Optional
 
 from src.common.config import load_config
 from src.ingest.embed import Embedder
-from src.search.client_qdrant import QdrantVectorClient
+from src.ingest.upsert import make_vector_client
 from src.common.types import SearchResult
 
 
@@ -15,9 +15,8 @@ def retrieve(query: str, cfg_path: str, top_k: int, filters: Optional[Dict]) -> 
         timeout_s=cfg["embeddings"].get("request_timeout_s", 60),
     )
     dims = embedder.embedding_dimensions()
-    vcfg = cfg["vectordb"]
-    client = QdrantVectorClient(vcfg.get("url"), vcfg.get("host"), vcfg.get("port"), vcfg.get("api_key"), vcfg["collection"], dims)
-    client.ensure_collection(vcfg["collection"], dims)
+    client = make_vector_client(cfg)
+    client.ensure_collection(cfg["vectordb"]["collection"], dims)
     qvec = embedder.embed_texts([query])[0]
     return client.search(qvec, top_k, filters)
 

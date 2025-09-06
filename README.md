@@ -23,7 +23,7 @@ Note: Defaults use OpenAI for embeddings and LLM to provide strong quality out o
 - Copy `.env.example` to `.env` and fill secrets.
 - Review `configs/default.yaml` and adjust if needed.
 
-3) One-command bring-up (Qdrant + API)
+3) One-command bring-up (Postgres + API)
 ```bash
 docker compose up --build -d
 ```
@@ -54,8 +54,8 @@ python -m src.rag.rag_cli --config configs/default.yaml --query "Summarize the k
   - POST `/rag` { query, top_k? }
 
 ### Note on dependencies
-- Install `docling`, `qdrant-client`, and `tiktoken` as listed in `requirements.txt`.
-- If you prefer offline embeddings, set `embeddings.provider: huggingface` and `model: sentence-transformers/all-MiniLM-L6-v2` in `configs/default.yaml`.
+- Install `docling`, `pgvector`, `psycopg`, and `tiktoken` as listed in `requirements.txt`.
+- To switch back to Qdrant, set `vectordb.provider: qdrant` and start the Qdrant service instead.
 
 ### Configuration
 See `configs/default.yaml` for all keys. Set secrets in `.env` (e.g., `OPENAI_API_KEY`).

@@ -18,6 +18,10 @@ def load_config(config_path: str) -> Dict[str, Any]:
     qdrant_url = os.getenv("QDRANT_URL")
     if qdrant_url:
         cfg.setdefault("vectordb", {})["url"] = qdrant_url
+    # DSN override for pgvector
+    dsn = os.getenv("VECTOR_DSN") or os.getenv("PGVECTOR_DSN")
+    if dsn:
+        cfg.setdefault("vectordb", {})["dsn"] = dsn
     qdrant_api_key = os.getenv("QDRANT_API_KEY")
     if qdrant_api_key is not None:
         cfg.setdefault("vectordb", {})["api_key"] = qdrant_api_key

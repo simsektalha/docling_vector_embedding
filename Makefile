@@ -4,7 +4,7 @@ QUERY?=What is configured by default?
 .PHONY: up down install ingest search rag api test samples eval
 
 up:
-	docker compose up -d qdrant
+	docker compose up -d postgres
 
 down:
 	docker compose down

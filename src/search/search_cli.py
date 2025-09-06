@@ -3,7 +3,7 @@ import os
 
 from src.common.config import load_config
 from src.ingest.embed import Embedder
-from src.search.client_qdrant import QdrantVectorClient
+from src.ingest.upsert import make_vector_client
 
 
 def main() -> None:
@@ -21,9 +21,8 @@ def main() -> None:
         timeout_s=cfg["embeddings"].get("request_timeout_s", 60),
     )
     dims = embedder.embedding_dimensions()
-    vcfg = cfg["vectordb"]
-    client = QdrantVectorClient(vcfg.get("url"), vcfg.get("host"), vcfg.get("port"), vcfg.get("api_key"), vcfg["collection"], dims)
-    client.ensure_collection(vcfg["collection"], dims)
+    client = make_vector_client(cfg)
+    client.ensure_collection(cfg["vectordb"]["collection"], dims)
 
     qvec = embedder.embed_texts([args.query])[0]
     results = client.search(qvec, args.top_k, cfg.get("search", {}).get("filters"))

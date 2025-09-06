@@ -1,27 +1,31 @@
 services:
-  qdrant:
-    image: qdrant/qdrant:v1.9.2
+  postgres:
+    image: ankane/pgvector:latest
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
     ports:
-      - "6333:6333"
+      - "5432:5432"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:6333/readyz"]
+      test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s
       retries: 10
     volumes:
-      - qdrant_storage:/qdrant/storage
+      - pg_data:/var/lib/postgresql/data
   api:
     build: .
     depends_on:
-      - qdrant
+      - postgres
     environment:
       - CONFIG_PATH=configs/default.yaml
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - QDRANT_URL=http://qdrant:6333
+      - VECTOR_DSN=postgresql://postgres:postgres@postgres:5432/postgres
     ports:
       - "8000:8000"
     command: uvicorn src.search.api:app --host 0.0.0.0 --port 8000
 
 volumes:
-  qdrant_storage:
+  pg_data:
 
 
