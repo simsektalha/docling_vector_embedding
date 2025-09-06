@@ -37,12 +37,13 @@ def convert_with_docling(file_path: str, sha256: str, cfg: Dict[str, Any]) -> Do
     converter = DocumentConverter()
     result = converter.convert(file_path)
 
-    # Extract simple sections hierarchy; docling structure may provide headings, pages, etc.
+    # Extract markdown + sections
     sections: List[SectionText] = []
     # Fallback: use entire document text if sections are unavailable
     try:
-        # Try to traverse docling's structured content. This is simplified and may be adapted.
-        plain_text = result.document.export_to_markdown() if hasattr(result.document, "export_to_markdown") else str(result.document)
+        # Prefer markdown export when available
+        markdown = result.document.export_to_markdown() if hasattr(result.document, "export_to_markdown") else None
+        plain_text = markdown or str(result.document)
         sections.append(SectionText(section_path="Document", page_numbers=[], text=plain_text))
     except Exception:
         sections.append(SectionText(section_path="Document", page_numbers=[], text=str(result)))
@@ -55,6 +56,7 @@ def convert_with_docling(file_path: str, sha256: str, cfg: Dict[str, Any]) -> Do
         modified_at=None,
         language="en",
         sections=sections,
+        markdown=markdown if 'markdown' in locals() else None,
     )
 
     if cfg.get("docling", {}).get("cache_converted", True):
@@ -70,6 +72,7 @@ def _to_cached(dc: DocumentConversion) -> Dict[str, Any]:
         "created_at": dc.created_at,
         "modified_at": dc.modified_at,
         "language": dc.language,
+        "markdown": dc.markdown,
         "sections": [
             {"section_path": s.section_path, "page_numbers": s.page_numbers, "text": s.text}
             for s in dc.sections
@@ -85,6 +88,7 @@ def _from_cached(data: Dict[str, Any]) -> DocumentConversion:
         created_at=data.get("created_at"),
         modified_at=data.get("modified_at"),
         language=data.get("language"),
+        markdown=data.get("markdown"),
         sections=[
             SectionText(section_path=s["section_path"], page_numbers=s.get("page_numbers", []), text=s["text"])  # type: ignore
             for s in data.get("sections", [])
