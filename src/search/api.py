@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 from src.common.config import load_config
 from src.ingest.embed import Embedder
-from src.search.client_qdrant import QdrantVectorClient
+from src.ingest.upsert import make_vector_client
 
 
 app = FastAPI()
@@ -30,9 +30,8 @@ _embedder = Embedder(
     timeout_s=_cfg["embeddings"].get("request_timeout_s", 60),
 )
 _dims = _embedder.embedding_dimensions()
-_vcfg = _cfg["vectordb"]
-_client = QdrantVectorClient(_vcfg.get("url"), _vcfg.get("host"), _vcfg.get("port"), _vcfg.get("api_key"), _vcfg["collection"], _dims)
-_client.ensure_collection(_vcfg["collection"], _dims)
+_client = make_vector_client(_cfg)
+_client.ensure_collection(_cfg["vectordb"]["collection"], _dims)
 
 
 @app.get("/health")
