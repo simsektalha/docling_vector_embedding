@@ -57,10 +57,14 @@ def convert_with_docling(file_path: str, sha256: str, cfg: Dict[str, Any]) -> Do
         language="en",
         sections=sections,
         markdown=markdown if 'markdown' in locals() else None,
+        source_path=file_path,
+        dl_doc=result.document,
     )
 
     if cfg.get("docling", {}).get("cache_converted", True):
-        _save_cache(cache_dir, sha256, _to_cached(dc))
+        # Only cache serializable fields
+        cached = _to_cached(dc)
+        _save_cache(cache_dir, sha256, cached)
     return dc
 
 
@@ -73,6 +77,7 @@ def _to_cached(dc: DocumentConversion) -> Dict[str, Any]:
         "modified_at": dc.modified_at,
         "language": dc.language,
         "markdown": dc.markdown,
+        "source_path": dc.source_path,
         "sections": [
             {"section_path": s.section_path, "page_numbers": s.page_numbers, "text": s.text}
             for s in dc.sections
@@ -89,6 +94,8 @@ def _from_cached(data: Dict[str, Any]) -> DocumentConversion:
         modified_at=data.get("modified_at"),
         language=data.get("language"),
         markdown=data.get("markdown"),
+        source_path=data.get("source_path"),
+        dl_doc=None,
         sections=[
             SectionText(section_path=s["section_path"], page_numbers=s.get("page_numbers", []), text=s["text"])  # type: ignore
             for s in data.get("sections", [])

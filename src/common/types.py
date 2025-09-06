@@ -25,6 +25,8 @@ class DocumentConversion:
     modified_at: Optional[str]
     language: Optional[str]
     markdown: Optional[str]
+    source_path: Optional[str]
+    dl_doc: Optional[object]
     sections: List[SectionText]
 
 
