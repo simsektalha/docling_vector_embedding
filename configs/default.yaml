@@ -1,0 +1,47 @@
+data:
+  input_dir: "samples/docs"
+  cache_dir: ".cache/docling"
+  include_glob: ["*.pdf", "*.docx", "*.html"]
+  exclude_glob: []
+  max_file_mb: 50
+docling:
+  ocr: "auto"           # auto|always|never
+  preserve_layout: true
+  cache_converted: true
+chunking:
+  strategy: "hierarchical"  # hierarchical|token
+  max_tokens: 800
+  overlap_tokens: 150
+  by_headings: true
+embeddings:
+  provider: "openai"     # openai|huggingface
+  model: "text-embedding-3-large"
+  batch_size: 64
+  request_timeout_s: 60
+vectordb:
+  provider: "qdrant"     # qdrant|pinecone|weaviate|milvus
+  collection: "documents"
+  dims: "auto"
+  url: "http://localhost:6333"
+  host: "localhost"
+  port: 6333
+  api_key: null
+  prefer_hnsw_m: 16
+  prefer_ef_construct: 128
+  prefer_hnsw_ef: 64
+search:
+  top_k: 5
+  filters: {}
+  hybrid: false
+rag:
+  llm_provider: "openai"  # openai|ollama
+  llm_model: "gpt-4o-mini"
+  top_k: 5
+  max_context_tokens: 4000
+  return_sources: true
+eval:
+  queries_file: "samples/queries.yaml"
+logging:
+  level: "INFO"
+  json: true
+

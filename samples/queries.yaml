@@ -1,0 +1,7 @@
+- id: q1
+  query: "What embedding model is configured by default?"
+  expects_any_source_contains: ["configs/default.yaml", "embeddings.model"]
+- id: q2
+  query: "List key risks from the product brief."
+  expects_any_source_contains: ["product_brief", "Risks"]
+
