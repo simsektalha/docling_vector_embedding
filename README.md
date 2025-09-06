@@ -5,6 +5,7 @@ End-to-end, config-driven pipeline to convert documents with Docling, chunk and 
 ### Features
 - Docling conversion (PDF, DOCX, HTML) with caching
 - Hierarchical chunking w/ token fallback and overlap
+ - Docling markdown heading chunker (default) with token fallback
 - Embeddings: OpenAI by default, Sentence-Transformers fallback
 - Vector DB: Qdrant by default; pluggable adapters
 - CLI for ingestion, search, and RAG; minimal REST API (FastAPI)
