@@ -20,7 +20,7 @@ services:
     environment:
       - CONFIG_PATH=configs/default.yaml
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - VECTOR_DSNL=postgresql://postgres:postgres@postgres:5432/postgres
+      - VECTOR_DSN=postgresql://postgres:postgres@postgres:5432/postgres
     ports:
       - "8000:8000"
     command: uvicorn src.search.api:app --host 0.0.0.0 --port 8000
