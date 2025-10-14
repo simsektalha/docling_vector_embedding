@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from typing import Dict, List, Optional
 
 import psycopg
@@ -29,7 +28,20 @@ CREATE INDEX IF NOT EXISTS documents_vec_idx ON documents USING ivfflat (vector 
 
 
 class PgVectorClient(VectorClient):
+    """PostgreSQL/pgvector client with auto-provision and cosine ANN search.
+
+    This client creates the `documents` table and a cosine IVFFLAT index if missing,
+    and provides simple upsert and search operations over vectors.
+    """
+
     def __init__(self, dsn: str, collection: str, dims: int) -> None:
+        """Initialize the client and register pgvector.
+
+        Args:
+            dsn: PostgreSQL DSN string.
+            collection: Kept for interface parity; table is fixed to `documents`.
+            dims: Embedding dimensionality used for the table schema.
+        """
         self.dsn = dsn
         self.collection = collection  # kept for interface parity
         self.dims = dims
@@ -37,11 +49,22 @@ class PgVectorClient(VectorClient):
         register_vector(self._conn)
 
     def ensure_collection(self, name: str, dims: int) -> None:
+        """Create extension, table, and vector index if they do not exist.
+
+        Args:
+            name: Logical collection name (unused; table is `documents`).
+            dims: Embedding vector dimension for the `VECTOR(dims)` column.
+        """
         self.dims = dims
         with self._conn.cursor() as cur:
             cur.execute(SCHEMA_SQL, {"dims": dims})
 
     def upsert(self, records) -> None:
+        """Insert or update embedding records.
+
+        Args:
+            records: Iterable of `EmbeddingRecord` items to upsert.
+        """
         with self._conn.cursor() as cur:
             for r in records:
                 payload = {**r.metadata}
@@ -68,15 +91,29 @@ class PgVectorClient(VectorClient):
                 )
 
     def search(self, query_vector: List[float], top_k: int, filters: Optional[Dict]) -> List[SearchResult]:
-        where = []
+        """Search nearest neighbors using cosine distance with optional filters.
+
+        Args:
+            query_vector: The query embedding vector.
+            top_k: Maximum number of results to return.
+            filters: Optional exact-match filters on metadata columns.
+
+        Returns:
+            A list of `SearchResult` sorted by similarity descending.
+        """
+        where: List[str] = []
         params: List = [query_vector]
         if filters:
             for k, v in filters.items():
                 where.append(f"{k} = %s")
                 params.append(v)
         where_sql = (" WHERE " + " AND ".join(where)) if where else ""
-        sql = f"SELECT id, text, source_path, file_name, section_path, page_numbers, char_span, doc_id, sha256, (1 - (vector <#> %s)) AS similarity FROM documents{where_sql} ORDER BY vector <#> %s ASC LIMIT {top_k}"
-        # duplicate query_vector at end for ORDER BY
+        sql = (
+            "SELECT id, text, source_path, file_name, section_path, page_numbers, char_span, doc_id, sha256, "
+            "(1 - (vector <#> %s)) AS similarity FROM documents" + where_sql +
+            " ORDER BY vector <#> %s ASC LIMIT " + str(top_k)
+        )
+        # duplicate query_vector at end for ORDER BY clause parameter
         params.append(query_vector)
         with self._conn.cursor() as cur:
             cur.execute(sql, params)
@@ -101,5 +138,4 @@ class PgVectorClient(VectorClient):
                 )
             )
         return out
-
 
