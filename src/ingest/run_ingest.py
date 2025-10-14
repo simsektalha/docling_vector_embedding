@@ -33,10 +33,12 @@ def main() -> None:
         model=cfg["embeddings"]["model"],
         batch_size=cfg["embeddings"].get("batch_size", 64),
         timeout_s=cfg["embeddings"].get("request_timeout_s", 60),
+        base_url=cfg.get("embedding", {}).get("base_url"),
+        api_key=cfg.get("embedding", {}).get("api_key"),
     )
-    dims = embedder.embedding_dimensions()
+    dims = cfg.get("pg", {}).get("embedding_dim") or embedder.embedding_dimensions()
     client = make_vector_client(cfg)
-    client.ensure_collection(cfg["vectordb"]["collection"], dims)
+    client.ensure_collection(cfg.get("vectordb", {}).get("collection", "documents"), int(dims))
 
     total_chunks = 0
     for f in files:

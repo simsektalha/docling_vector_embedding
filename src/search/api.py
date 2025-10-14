@@ -28,10 +28,12 @@ _embedder = Embedder(
     model=_cfg["embeddings"]["model"],
     batch_size=_cfg["embeddings"].get("batch_size", 64),
     timeout_s=_cfg["embeddings"].get("request_timeout_s", 60),
+    base_url=_cfg.get("embedding", {}).get("base_url"),
+    api_key=_cfg.get("embedding", {}).get("api_key"),
 )
-_dims = _embedder.embedding_dimensions()
+_dims = _cfg.get("pg", {}).get("embedding_dim") or _embedder.embedding_dimensions()
 _client = make_vector_client(_cfg)
-_client.ensure_collection(_cfg["vectordb"]["collection"], _dims)
+_client.ensure_collection(_cfg.get("vectordb", {}).get("collection", "documents"), int(_dims))
 
 
 @app.get("/health")
