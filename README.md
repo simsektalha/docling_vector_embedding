@@ -1,86 +1,38 @@
-## Docling RAG Starter
+## Basic RAG (Single File)
 
-End-to-end, config-driven pipeline to convert documents with Docling, chunk and embed content, index into a vector database (Qdrant by default), and provide semantic search plus a minimal RAG demo with citations.
+This repository is simplified to a single-file Streamlit app using:
+- PostgreSQL with pgvector
+- External OpenAI-compatible endpoints for embeddings and chat completions
 
-### Features
-- Docling conversion (PDF, DOCX, HTML) with caching
-- Hierarchical chunking w/ token fallback and overlap
- - Docling markdown heading chunker (default) with token fallback
-- Embeddings: OpenAI by default, Sentence-Transformers fallback
-- Vector DB: Qdrant by default; pluggable adapters
-- CLI for ingestion, search, and RAG; minimal REST API (FastAPI)
-- Config-first via YAML and .env
-- Docker-compose for one-command run
-- Unit tests and CI workflow
-
-Note: Defaults use OpenAI for embeddings and LLM to provide strong quality out of the box, matching a preference for external API usage. Switch to offline HuggingFace or Ollama in config if desired.
-
-### Quickstart
-1) Prereqs
-- Docker and Docker Compose
-- Python 3.11+
-
-2) Setup
-- Copy `.env.example` to `.env` and fill secrets.
-- Review `configs/default.yaml` and adjust if needed.
-
-3) One-command bring-up (Postgres + API)
+### Run
+1) Install Python 3.10+ and dependencies:
 ```bash
-docker compose up --build -d
+pip install streamlit httpx psycopg[binary] pgvector
+```
+2) Set environment variables (adjust as needed):
+```bash
+set PG_DSN=postgresql://postgres:postgres@localhost:5432/postgres
+set EMBEDDING_BASE_URL=http://localhost:8000
+set LLM_BASE_URL=http://localhost:8001
+```
+Optional:
+```bash
+set EMBEDDING_API_KEY=...
+set LLM_API_KEY=...
+set EMBEDDING_MODEL=text-embedding
+set LLM_MODEL=chat-model
+set EMBEDDING_DIM=1024
+set RETRIEVAL_TOP_K=5
+```
+3) Start the app:
+```bash
+streamlit run app.py
 ```
 
-4) Ingest sample docs into Qdrant
-```bash
-python -m venv .venv && . .venv/Scripts/activate
-pip install -r requirements.txt
-python samples/generate_samples.py
-python -m src.ingest.run_ingest --config configs/default.yaml
-```
+Open the browser URL shown by Streamlit and start adding text and chatting.
 
-5) Semantic search (CLI)
-```bash
-python -m src.search.search_cli --config configs/default.yaml --query "What is configured by default?"
-```
-
-6) Minimal RAG (CLI)
-```bash
-python -m src.rag.rag_cli --config configs/default.yaml --query "Summarize the key points."
-```
-
-7) REST API
-- API runs at `http://localhost:8000` when `docker compose up` includes the `api` service.
-- Endpoints:
-  - GET `/health`
-  - POST `/search` { query, top_k?, filters? }
-  - POST `/rag` { query, top_k? }
-
-### Note on dependencies
-- Install `docling`, `pgvector`, `psycopg`, and `tiktoken` as listed in `requirements.txt`.
-- To switch back to Qdrant, set `vectordb.provider: qdrant` and start the Qdrant service instead.
-
-### Configuration
-See `configs/default.yaml` for all keys. Set secrets in `.env` (e.g., `OPENAI_API_KEY`).
-
-Key toggles:
-- `embeddings.provider`: `openai` or `huggingface`
-- `vectordb.provider`: `qdrant` (default), adapters ready for extension
-- `chunking.strategy`: `hierarchical` or `token`
-
-### Samples
-Run `python samples/generate_samples.py` to create a tiny PDF and DOCX in `samples/docs/` for testing.
-
-### Tests
-```bash
-pytest -q
-```
-Notes:
-- Unit tests run offline.
-- Integration tests are marked and require Qdrant running; they are skipped in CI by default.
-
-### Troubleshooting
-- Qdrant readiness: check `http://localhost:6333/readyz`.
-- Missing OCR utilities: the Dockerfile installs Tesseract and Poppler.
-- No OpenAI key: switch to `embeddings.provider: huggingface` in config.
+### File
+- `app.py`: Contains database setup, embedding/search, and the Streamlit UI.
 
 ### License
 MIT
